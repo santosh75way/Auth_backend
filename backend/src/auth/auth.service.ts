@@ -2,26 +2,23 @@ import { AppError } from "../common/types/appError";
 import { createUser, findUserByEmail } from "../user/user.repository";
 import { toPublicUser } from "../user/user.mapper";
 import { hashPassword, verifyPassword } from "./password.service";
-import type { SignupBody, LoginBody } from "./auth.schema";
+import type { SignupBody, LoginBody, ForgotPasswordBody, ResetPasswordBody } from "./auth.schema";
 import type { PublicUser } from "../common/types/user.types";
-import { signAccessToken, signRefreshToken } from "./token.service";
+import { signAccessToken, signRefreshToken, verifyRefreshToken } from "./token.service";
 import { env } from "../common/config/env";
-import { saveRefreshToken } from "./refreshToken.service";
-
-import { clearRefreshCookie, setRefreshCookie } from "./cookies.service";
-// import { hashToken, saveRefreshToken } from "./refreshToken.service";
+import { saveRefreshToken, makeOpaqueToken, hashToken } from "./refreshToken.service";
 import {
   findValidRefreshTokenByHash,
   revokeRefreshTokenByHash,
   revokeRefreshTokenById,
 } from "./refreshToken.repository";
-import { verifyRefreshToken } from "./token.service";
-//////////////////////////////////////////////
-import { forgotPasswordSchema, type ForgotPasswordBody, type ResetPasswordBody } from "./auth.schema";
 import { createPasswordResetToken, findValidPasswordResetTokenByHash, markPasswordResetTokenUsed } from "./passwordReset.rpository";
-import { makeOpaqueToken, hashToken } from "./refreshToken.service";
 import { sendPasswordResetEmail } from "./email.service";
 import { updateUserPasswordHash } from "../user/user.repository";
+import type { Response } from "express";
+import { clearRefreshCookie, setRefreshCookie } from "./cookies.service";
+
+// ─── Signup ──────────────────────────────────────────────────────────────────
 
 export async function signup(input: SignupBody): Promise<PublicUser> {
   const email = input.email.trim().toLowerCase();
@@ -43,6 +40,8 @@ export async function signup(input: SignupBody): Promise<PublicUser> {
   return toPublicUser(user);
 }
 
+// ─── Login ───────────────────────────────────────────────────────────────────
+
 export type LoginResult = {
   user: PublicUser;
   accessToken: string;
@@ -54,7 +53,7 @@ export async function login(input: LoginBody): Promise<LoginResult> {
 
   const user = await findUserByEmail(email);
   if (!user) {
-    throw new AppError("Invalid email or password", 401, "INVALID_CREDENTIALS");
+    throw new AppError("User not registered, please sign up first", 401, "INVALID_CREDENTIALS");
   }
 
   const ok = await verifyPassword(input.password, user.passwordHash);
@@ -77,8 +76,7 @@ export async function login(input: LoginBody): Promise<LoginResult> {
   };
 }
 
-///////////////////////////
-import type { Response } from "express";
+// ─── Refresh Session ─────────────────────────────────────────────────────────
 
 export type RefreshResult = {
   accessToken: string;
@@ -97,7 +95,7 @@ export async function refreshSession(params: {
     throw new AppError("Refresh token is invalid", 401, "INVALID_REFRESH");
   }
 
-  // Rotate refresh token: revoke old token row
+  // Rotate: revoke old token
   await revokeRefreshTokenById(dbToken.id);
 
   const newRefreshToken = signRefreshToken({ sub: claims.sub, email: claims.email });
@@ -113,11 +111,15 @@ export async function refreshSession(params: {
   return { accessToken: newAccessToken, refreshToken: newRefreshToken };
 }
 
+// ─── Logout ──────────────────────────────────────────────────────────────────
+
 export async function logoutSession(params: { refreshToken: string }): Promise<void> {
   const tokenHash = hashToken(params.refreshToken);
   await revokeRefreshTokenByHash(tokenHash);
 }
-/////////////////////////////////////////
+
+// ─── Forgot Password ─────────────────────────────────────────────────────────
+
 export type ForgotPasswordResult = {
   message: string;
 };
@@ -125,7 +127,7 @@ export type ForgotPasswordResult = {
 export async function forgotPassword(input: ForgotPasswordBody): Promise<ForgotPasswordResult> {
   const email = input.email.trim().toLowerCase();
 
-  // Always return same response (prevents email enumeration)
+  // Always return the same generic response to prevent email enumeration attacks.
   const generic: ForgotPasswordResult = {
     message: "If the account exists, a password reset email has been sent.",
   };
@@ -138,7 +140,7 @@ export async function forgotPassword(input: ForgotPasswordBody): Promise<ForgotP
   const rawToken = makeOpaqueToken();
   const tokenHash = hashToken(rawToken);
 
-  // 15 minutes reset window
+  // 15-minute reset window
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
   await createPasswordResetToken({
@@ -147,15 +149,23 @@ export async function forgotPassword(input: ForgotPasswordBody): Promise<ForgotP
     expiresAt,
   });
 
-  const resetLink = `http://localhost:5173/reset-password?token=${rawToken}`;  try {
-    await sendPasswordResetEmail({ toEmail: user.email, resetLink });
-  } catch {
-    // ignore email send failures in development to keep response generic
-  }
+  const resetLink = `${env.FRONTEND_URL}/reset-password?token=${rawToken}`;
 
+  try {
+    await sendPasswordResetEmail({ toEmail: user.email, resetLink });
+  } catch (err) {
+    // In development, surface SMTP errors so they are visible and debuggable.
+    // In production, keep the response generic to avoid leaking internals.
+    if (env.NODE_ENV === "development") {
+      console.error("[forgotPassword] SMTP error:", err);
+      throw err; // bubble up → API returns 500 with real message during dev
+    }
+  }
 
   return generic;
 }
+
+// ─── Reset Password ──────────────────────────────────────────────────────────
 
 export type ResetPasswordResult = {
   message: string;

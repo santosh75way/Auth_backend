@@ -3,6 +3,7 @@ import { Box, Divider, List, ListItemButton, ListItemText, Button } from "@mui/m
 import { ROUTES } from "../../../router/paths";
 import { useAppDispatch } from "../../../hooks/useAppDispatch";
 import { clearSession } from "../../../store/slices/auth.slice";
+import { apiLogout } from "../../../services/auth.service";
 
 export function Sidebar() {
   const navigate = useNavigate();
@@ -10,9 +11,15 @@ export function Sidebar() {
 
   const handleGoHome = () => navigate(ROUTES.HOME);
 
-  const handleLogout = () => {
-    dispatch(clearSession());
-    navigate(ROUTES.DEMO, { replace: true });
+  const handleLogout = async () => {
+    try {
+      await apiLogout();
+    } catch (e) {
+      console.error("Failed to logout on backend:", e);
+    } finally {
+      dispatch(clearSession());
+      navigate(ROUTES.DEMO, { replace: true });
+    }
   };
 
   return (

@@ -10,6 +10,7 @@ import { AppLayout } from "../layouts/AppLayout/AppLayout";
 import { DemoPage } from "../pages/Demo/DemoPage";
 import { SignupPage } from "../pages/Signup/SignupPage";
 import { LoginPage } from "../pages/Login/LoginPage";
+import { ResetPasswordPage } from "../pages/ResetPassword/ResetPasswordPage";
 import { HomePage } from "../pages/Home/HomePage";
 import { NotFoundPage } from "../pages/NotFound/NotFoundPage";
 
@@ -19,6 +20,7 @@ export const router = createBrowserRouter([
     children: [
       { path: ROUTES.DEMO, element: <DemoPage /> },
       { path: ROUTES.SIGNUP, element: <SignupPage /> },
+      { path: ROUTES.RESET_PASSWORD, element: <ResetPasswordPage /> },
       {
         element: <LoginAccessRoute />,
         children: [{ path: ROUTES.LOGIN, element: <LoginPage /> }],

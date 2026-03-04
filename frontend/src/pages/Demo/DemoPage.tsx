@@ -6,7 +6,6 @@ import { useAppSelector } from "../../hooks/useAppSelector";
 export function DemoPage() {
     const navigate = useNavigate();
     const isAuthenticated = useAppSelector((s) => s.auth.status === "authenticated");
-    const hasSignedUp = useAppSelector((s) => s.auth.hasSignedUp);
 
     const handleLogin = () => navigate(ROUTES.LOGIN);
     const handleSignup = () => navigate(ROUTES.SIGNUP);
@@ -52,7 +51,7 @@ export function DemoPage() {
                                 <Button variant="contained" size="large" onClick={handleSignup} sx={{ minWidth: 160 }}>
                                     Sign Up
                                 </Button>
-                                <Button variant="outlined" size="large" onClick={handleLogin} sx={{ minWidth: 160 }} disabled={!hasSignedUp}>
+                                <Button variant="outlined" size="large" onClick={handleLogin} sx={{ minWidth: 160 }}>
                                     Sign In
                                 </Button>
                             </>

@@ -10,7 +10,7 @@ export function errorMiddleware(err: Error, _req: Request, res: Response, _next:
     if (err instanceof AppError) {
         const body: ErrorBody = {
             message: err.message,
-            code: err.code,
+            ...(err.code !== undefined && { code: err.code }),
         };
         res.status(err.status).json(body);
         return;

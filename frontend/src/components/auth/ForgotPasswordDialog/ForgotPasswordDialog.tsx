@@ -12,7 +12,6 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { forgotPasswordSchema, type ForgotPasswordValues } from "../../../features/auth/schemas";
-import { useAppSelector } from "../../../hooks/useAppSelector";
 import { apiForgotPassword } from "../../../services/auth.service";
 
 type Props = {
@@ -21,7 +20,6 @@ type Props = {
 };
 
 export function ForgotPasswordDialog({ open, onClose }: Props) {
-    const hasSignedUp = useAppSelector((s) => s.auth.hasSignedUp);
     const [successMsg, setSuccessMsg] = useState<string | null>(null);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,17 +45,12 @@ export function ForgotPasswordDialog({ open, onClose }: Props) {
         setSuccessMsg(null);
         setErrorMsg(null);
 
-        if (!hasSignedUp) {
-            setErrorMsg("Please signup first. No account found for this email.");
-            return;
-        }
-
         setIsSubmitting(true);
         try {
             await apiForgotPassword(values.email);
             setSuccessMsg("Email sent to your registered mail.");
         } catch (e) {
-            setErrorMsg("Failed to send email");
+            setErrorMsg(e instanceof Error ? e.message : "Failed to send email");
         } finally {
             setIsSubmitting(false);
         }

@@ -23,4 +23,5 @@ export const env: Env = envSchema.parse({
     SMTP_USER: process.env.SMTP_USER,
     SMTP_PASS: process.env.SMTP_PASS,
     SMTP_FROM: process.env.SMTP_FROM,
+    FRONTEND_URL: process.env.FRONTEND_URL,
 });

@@ -23,6 +23,7 @@ export const envSchema = z.object({
     SMTP_USER: z.string().min(1),
     SMTP_PASS: z.string().min(1),
     SMTP_FROM: z.string().min(1),
+    FRONTEND_URL: z.string().url().default("http://localhost:5173"),
 });
 
 export type Env = z.infer<typeof envSchema>;
