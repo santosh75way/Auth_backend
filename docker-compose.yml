@@ -11,21 +11,13 @@ services:
       - NODE_ENV=development
       - PORT=8080
       - CORS_ORIGIN=http://localhost:5173
-      - DATABASE_URL=${DATABASE_URL:-postgresql://neondb_owner:npg_z2H0SUqFjAVo@ep-round-credit-a16mpfmx-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require}
-      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET:-change_me_access_secret}
-      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-change_me_refresh_secret}
-      - JWT_ACCESS_TTL_SECONDS=1500
-      - JWT_REFRESH_TTL_SECONDS=1209600
-      - COOKIE_NAME_REFRESH=refresh_token
-      - COOKIE_SECURE=false
-      - COOKIE_SAMESITE=lax
-      - COOKIE_DOMAIN=
-      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
-      - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_USER=${SMTP_USER:-kennikurenchi2383@gmail.com}
-      - SMTP_PASS=${SMTP_PASS:-bhfb lwqt srrp ytgt}
-      - SMTP_FROM="Auth App <kennikurenchi2383@gmail.com>"
-      - FRONTEND_URL=http://localhost:5173
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
 
   frontend:
     build:
